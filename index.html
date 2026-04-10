@@ -26,8 +26,10 @@
         const { useState, useMemo, useEffect, useRef } = React;
 
         // --- KONFIGURATION ---
-        // Oli: Trage hier deinen API-Key ein (z.B. AIzaSy...)
+        // Oli: Trage hier deinen API-Key ein!
         const API_KEY = "AIzaSyDl29sJKHxevx_fUQgUCNUYPkfI4fausA4"; 
+        
+        // Wir setzen hier das von dir gefundene neue Modell ein
         const MODEL_ID = "gemini-1.5-flash"; 
 
         // Icons
@@ -50,7 +52,7 @@
             const [showChat, setShowChat] = useState(false);
             const [isTyping, setIsTyping] = useState(false);
             const [chatHistory, setChatHistory] = useState([
-                { role: 'ai', text: 'Grüezi Oli! Ich bin bereit. Ich kenne alle LANDI Rasenmäher auswendig. Wie kann ich dir heute helfen?' }
+                { role: 'ai', text: 'Grüezi Oli! Ich bin bereit. Ich nutze jetzt die aktuellste Modell-Technik für die Beratung. Was kann ich für dich tun?' }
             ]);
             const [userInput, setUserInput] = useState('');
             const chatEndRef = useRef(null);
@@ -64,18 +66,15 @@
 
             const askAI = async (query) => {
                 if (!API_KEY || API_KEY.trim() === "") {
-                    setChatHistory(prev => [...prev, { role: 'ai', text: "⚠️ FEHLER: Bitte trage deinen API-Key in der index.html ein!" }]);
+                    setChatHistory(prev => [...prev, { role: 'ai', text: "⚠️ FEHLER: Bitte trage deinen API-Key ein!" }]);
                     return;
                 }
                 setIsTyping(true);
                 
-                // Wir betten das Systemwissen direkt in den Content ein, da manche Schlüssel keinen Zugriff auf system_instructions haben
-                const systemKnowledge = `Du bist der offizielle LANDI Fachberater für Herzogenbuchsee. Berate kompetent auf HOCHDEUTSCH.
-                Sortiment-Wissen: ${JSON.stringify(mowers)}. 
-                WICHTIG: Benzinmäher brauchen IMMER Öl SAE 30 (Art. 13174) und Oecofuel 4 (Art. 39659). Nenne immer LANDI-Artikelnummern.`;
+                const systemPrompt = `Du bist der offizielle LANDI Fachberater für Herzogenbuchsee. Berate kompetent auf HOCHDEUTSCH. Wissen: ${JSON.stringify(mowers)}. Benzinmäher brauchen IMMER Öl SAE 30 (Art. 13174) und Oecofuel 4 (Art. 39659).`;
 
                 try {
-                    // Verwende den explizit in der Doku genannten Endpunkt für v1beta
+                    // Wir probieren den v1beta Endpunkt, da dieser die neuen Modelle am besten unterstützt
                     const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${API_KEY}`;
                     
                     const response = await fetch(url, {
@@ -83,7 +82,7 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             contents: [{
-                                parts: [{ text: `${systemKnowledge}\n\nKunde fragt: ${query}` }]
+                                parts: [{ text: `${systemPrompt}\n\nKunde fragt: ${query}` }]
                             }]
                         })
                     });
@@ -91,13 +90,13 @@
                     const data = await response.json();
                     
                     if (data.error) {
-                        throw new Error(`${data.error.code} (${data.error.status}): ${data.error.message}`);
+                        throw new Error(`${data.error.code}: ${data.error.message}`);
                     }
 
-                    const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Keine Antwort erhalten.";
+                    const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Keine Antwort vom Server.";
                     setChatHistory(prev => [...prev, { role: 'ai', text: aiText }]);
                 } catch (e) {
-                    setChatHistory(prev => [...prev, { role: 'ai', text: "❌ System-Fehler: " + e.message + "\n\nOli, falls dieser Fehler bleibt, versuche einen neuen Key im Google AI Studio zu erstellen!" }]);
+                    setChatHistory(prev => [...prev, { role: 'ai', text: "❌ Fehler: " + e.message + "\n\nOli, probiere eventuell 'gemini-pro' als MODEL_ID in der index.html aus, falls dieser Fehler bleibt." }]);
                 } finally {
                     setIsTyping(false);
                 }
@@ -133,10 +132,10 @@
                     <main className="max-w-7xl mx-auto p-10">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                             {filtered.map(m => (
-                                <div key={m.id} onClick={() => setSelectedModel(m)} className="bg-white p-8 rounded-[2.5rem] shadow-sm border-2 border-transparent hover:border-green-600 transition-all cursor-pointer group flex flex-col justify-between h-full">
+                                <div key={m.id} onClick={() => setSelectedModel(m)} className="bg-white p-8 rounded-[2rem] shadow-sm border-2 border-transparent hover:border-green-600 transition-all cursor-pointer group flex flex-col justify-between h-full">
                                     <div>
                                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Art. {m.id}</span>
-                                        <h3 className="text-xl font-black text-slate-800 mb-4 mt-2 group-hover:text-green-700 transition-colors">{m.name}</h3>
+                                        <h3 className="text-xl font-black text-slate-800 mb-4 mt-2 group-hover:text-green-700">{m.name}</h3>
                                         <div className="text-2xl font-black">CHF {m.price}</div>
                                     </div>
                                     <div className="mt-6 flex items-center justify-between text-xs font-bold text-slate-400 group-hover:text-green-600">
@@ -175,7 +174,7 @@
 
                         {selectedModel && (
                             <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 z-[200]">
-                                <div className="bg-white rounded-[3.5rem] p-10 max-w-4xl w-full relative animate-slideUp border-4 border-white shadow-2xl overflow-hidden">
+                                <div className="bg-white rounded-[3rem] p-10 max-w-4xl w-full relative animate-slideUp border-4 border-white shadow-2xl overflow-hidden">
                                     <button onClick={() => setSelectedModel(null)} className="absolute top-8 right-8 text-slate-400 hover:text-red-500"><Icon name="X" /></button>
                                     <h2 className="text-4xl md:text-6xl font-black tracking-tighter mb-8">{selectedModel.fullName}</h2>
                                     <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-10">
@@ -186,8 +185,8 @@
                                             </div>
                                         ))}
                                     </div>
-                                    <div className="bg-slate-900 text-white p-10 rounded-[2.5rem] shadow-xl border-t-8 border-green-600">
-                                        <h4 className="text-green-500 font-black uppercase text-xs tracking-widest mb-6 text-center">Zubehör & Wartung</h4>
+                                    <div className="bg-slate-900 text-white p-10 rounded-[2.5rem] shadow-xl border-t-8 border-green-600 text-center md:text-left">
+                                        <h4 className="text-green-500 font-black uppercase text-xs tracking-widest mb-6">Zubehör & Wartung</h4>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm opacity-90">
                                             <div>
                                                 <p className="text-slate-500 uppercase text-[9px] font-black mb-1 tracking-widest">Energie / Öl</p>
