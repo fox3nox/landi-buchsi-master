@@ -64,65 +64,37 @@
 
             const askAI = async (query) => {
                 if (!API_KEY || API_KEY.trim() === "") {
-                    setChatHistory(prev => [...prev, { role: 'ai', text: "⚠️ FEHLER: Bitte trage deinen API-Key in der index.html ein!" }]);
+                    setChatHistory(prev => [...prev, { role: 'ai', text: "⚠️ FEHLER: Trage deinen API-Key in der index.html ein!" }]);
                     return;
                 }
                 setIsTyping(true);
                 
-                const systemPrompt = `Du bist der offizielle LANDI Fachberater für Herzogenbuchsee. Berate kompetent auf HOCHDEUTSCH. Wissen: ${JSON.stringify(mowers)}. WICHTIG: Benzinmäher brauchen IMMER Öl SAE 30 (Art. 13174) und Oecofuel 4 (Art. 39659). Nenne immer die LANDI-Artikelnummern. Wenn du etwas nicht weisst, verweise an die Filiale Buchsi.`;
+                const systemKnowledge = `Du bist der offizielle LANDI Fachberater für Herzogenbuchsee. Berate kompetent auf HOCHDEUTSCH. Wissen: ${JSON.stringify(mowers)}. WICHTIG: Benzinmäher brauchen IMMER Öl SAE 30 (Art. 13174) und Oecofuel 4 (Art. 39659). Nenne immer Artikelnummern.`;
 
                 try {
-                    // Wir bauen den Request exakt so auf, wie Google es für v1beta REST-Anfragen verlangt
+                    // Wir nutzen die stabilste URL-Struktur laut Dokumentation
                     const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${API_KEY}`;
                     
                     const response = await fetch(url, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            contents: [
-                                {
-                                    role: "user",
-                                    parts: [{ text: query }]
-                                }
-                            ],
-                            system_instruction: {
-                                parts: [{ text: systemPrompt }]
-                            },
-                            generationConfig: {
-                                temperature: 0.7,
-                                topK: 40,
-                                topP: 0.95,
-                                maxOutputTokens: 1024,
-                            }
+                            contents: [{
+                                parts: [{ text: `${systemKnowledge}\n\nKunde fragt: ${query}` }]
+                            }]
                         })
                     });
                     
                     const data = await response.json();
                     
                     if (data.error) {
-                        // Falls Flash immer noch 404 wirft, versuchen wir es mit dem generischen 'gemini-pro'
-                        if (data.error.code === 404 && MODEL_ID !== "gemini-pro") {
-                            console.log("Flash nicht gefunden, versuche Pro...");
-                            const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
-                            const fallbackRes = await fetch(fallbackUrl, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    contents: [{ role: "user", parts: [{ text: systemPrompt + "\n\nKunde fragt: " + query }] }]
-                                })
-                            });
-                            const fallbackData = await fallbackRes.json();
-                            const fallbackText = fallbackData.candidates?.[0]?.content?.parts?.[0]?.text;
-                            setChatHistory(prev => [...prev, { role: 'ai', text: fallbackText || "Modell-Fehler bei Google." }]);
-                        } else {
-                            throw new Error(`${data.error.code}: ${data.error.message}`);
-                        }
-                    } else {
-                        const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Keine Antwort vom Server.";
-                        setChatHistory(prev => [...prev, { role: 'ai', text: aiText }]);
+                        throw new Error(`${data.error.code} (${data.error.status}): ${data.error.message}`);
                     }
+
+                    const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Keine Antwort vom Server erhalten.";
+                    setChatHistory(prev => [...prev, { role: 'ai', text: aiText }]);
                 } catch (e) {
-                    setChatHistory(prev => [...prev, { role: 'ai', text: "❌ System-Fehler: " + e.message }]);
+                    setChatHistory(prev => [...prev, { role: 'ai', text: "❌ System-Fehler: " + e.message + "\nBitte prüfe den Key im Google AI Studio!" }]);
                 } finally {
                     setIsTyping(false);
                 }
@@ -176,7 +148,7 @@
                                 <div className="bg-green-700 p-5 text-white font-black flex justify-between items-center shadow-lg">
                                     <div className="flex items-center gap-2 uppercase tracking-widest text-xs">
                                         <div className="w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse shadow-[0_0_10px_#4ade80]"></div>
-                                        KI-Fachberater v6.5
+                                        KI-Fachberater v6.6
                                     </div>
                                     <button onClick={() => setShowChat(false)}><Icon name="X" className="w-5 h-5" /></button>
                                 </div>
