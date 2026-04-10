@@ -4,41 +4,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LANDI BUCHSI MASTER 2026</title>
+    <!-- React & Dependencies -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-slideUp { animation: slideUp 0.4s ease-out forwards; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-slideUp { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .glass-nav { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-900">
+<body class="text-slate-900">
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useMemo, useEffect, useRef } = React;
 
         // --- KONFIGURATION ---
-        // HINWEIS: Füge hier deinen API-Key ein oder nutze die Vercel Env Vars
+        // WICHTIG: Setze hier deinen Gemini API Key ein!
         const API_KEY = "AIzaSyD_tYDy9keArZfb3Yj2O50SuCqYLDtqFk0"; 
         const MODEL_NAME = "gemini-2.5-flash-preview-09-2025";
         const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${API_KEY}`;
 
-        // --- ICONS (Inline SVG für maximale Kompatibilität) ---
+        // --- ICONS (SVG) ---
         const Icon = ({ name, className = "w-6 h-6" }) => {
             const icons = {
-                Shield: <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>,
-                Search: <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
-                Chat: <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>,
-                Send: <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>,
-                X: <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l18 18" /></svg>,
-                Oil: <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>,
-                Battery: <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>
+                Shield: <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>,
+                Search: <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
+                Chat: <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>,
+                Send: <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>,
+                X: <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M6 18L18 6M6 6l12 12" /></svg>,
+                Zap: <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>,
+                Check: <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M5 13l4 4L19 7" /></svg>
             };
             return icons[name] || null;
         };
@@ -49,46 +51,58 @@
             const [showChat, setShowChat] = useState(false);
             const [isTyping, setIsTyping] = useState(false);
             const [chatHistory, setChatHistory] = useState([
-                { role: 'ai', text: 'Grüezi Oli! Ich bin dein digitaler Landi-Experte für Herzogenbuchsee. Wie kann ich dir helfen?' }
+                { role: 'ai', text: 'Grüezi! Ich bin dein digitaler Landi-Experte für Herzogenbuchsee. Ich habe alle technischen Daten und Handbücher geladen. Wie kann ich dir helfen?' }
             ]);
             const [userInput, setUserInput] = useState('');
             const chatEndRef = useRef(null);
 
+            // --- KOMPLETTE DATENBANK ---
             const mowers = [
                 {
                     id: "101443", name: "Okay RM500", fullName: "Rasenmäher Roboter RM500 Okay", category: "Roboter", price: "259.00",
-                    specs: { "Fläche": "500 m²", "Breite": "16 cm", "Steigung": "26.8%", "Akku": "20 V / 2 Ah" },
-                    consumables: { blade: "73818", wire: "73817" },
-                    description: "Einsteiger-Roboter, leise und zuverlässig."
+                    specs: { "Fläche": "500 m²", "Breite": "16 cm", "Steigung": "26.8%", "Akku": "20 V / 2 Ah", "Lautstärke": "61 dB" },
+                    consumables: { blade: "73818 (Ersatzmesser)", wire: "73817 (Draht 200m)", garage: "63000 (Garage)" },
+                    description: "Kompakter Einsteiger-Roboter für einfache Gärten.",
+                    setup: "Drahtabstand 35cm, Ladestation waagerecht, PIN-Code einrichten."
                 },
                 {
                     id: "100791", name: "Okay Titan II", fullName: "Benzinmäher Titan II E-Start 6 PS", category: "Benzin", price: "499.00",
-                    specs: { "Leistung": "6 PS", "Breite": "53 cm", "Antrieb": "Radantrieb", "Start": "E-Start" },
-                    consumables: { oil: "13174 (SAE 30)", fuel: "39659 (Oecofuel 4)" },
-                    description: "Kraftpaket für grosse Flächen bis 2000 m²."
+                    specs: { "Leistung": "6 PS", "Breite": "53 cm", "Antrieb": "Radantrieb", "Start": "E-Start Knopf", "Korb": "70 l" },
+                    consumables: { oil: "13174 (SAE 30, 0.6l)", fuel: "39659 (Oecofuel 4)", blade: "13168", spark: "24551" },
+                    description: "Unser stärkster Benzinmäher mit bequemem Elektro-Start.",
+                    setup: "0.6l SAE 30 Öl einfüllen, Tanken, Startknopf drücken."
                 },
                 {
                     id: "100789", name: "Okay Apollo II", fullName: "Benzinmäher Apollo II 4 PS", category: "Benzin", price: "349.00",
-                    specs: { "Leistung": "4 PS", "Breite": "51 cm", "Antrieb": "Ja" },
-                    consumables: { oil: "13174 (SAE 30)", blade: "14364" },
-                    description: "Robuster Allrounder für mittlere Gärten."
+                    specs: { "Leistung": "4 PS", "Breite": "51 cm", "Antrieb": "Ja", "Korb": "65 l" },
+                    consumables: { oil: "13174 (SAE 30)", fuel: "39659", blade: "14364" },
+                    description: "Robuster High-Wheeler für Hanglagen.",
+                    setup: "Ölstand prüfen, Primer 3x drücken, Seilzug ziehen."
                 },
                 {
                     id: "56713", name: "Okay 120 V", fullName: "Akku-Rasenmäher Okay 120 V", category: "Akku", price: "459.00",
-                    specs: { "Spannung": "120 V", "Breite": "51 cm", "Antrieb": "Ja" },
-                    consumables: { battery: "56714", blade: "14364" },
-                    description: "Benzin-Power ohne Abgase. Extrem kraftvoll."
+                    specs: { "Spannung": "120 V", "Breite": "51 cm", "Antrieb": "Ja", "Motor": "Brushless" },
+                    consumables: { battery: "56714 (3Ah)", blade: "14364", key: "56715" },
+                    description: "Benzin-Power kabellos. Extrem kraftvoll und leise.",
+                    setup: "Akku laden, Sicherheitsschlüssel stecken, Hebel ziehen."
                 }
             ];
 
             const askAI = async (query) => {
-                if (!API_KEY) {
-                    setChatHistory(prev => [...prev, { role: 'ai', text: "Fehler: Kein API-Key gefunden. Bitte im Code einfügen." }]);
+                if (!API_KEY || API_KEY === "") {
+                    setChatHistory(prev => [...prev, { role: 'ai', text: "⚠️ HINWEIS: Du hast noch keinen Gemini API-Key im Code eingetragen. Bitte füge deinen Key in der index.html bei 'const API_KEY' ein!" }]);
                     return;
                 }
                 setIsTyping(true);
-                const systemPrompt = `Du bist Landi-Experte für Buchsi. Berate auf Hochdeutsch. Wissen: ${JSON.stringify(mowers)}. Nenne immer Art.Nr.`;
                 
+                const systemPrompt = `Du bist der offizielle Landi-Fachberater für Herzogenbuchsee. Du berätst Kunden kompetent, freundlich und auf Hochdeutsch. 
+                Hier ist dein Katalog: ${JSON.stringify(mowers)}.
+                WICHTIG:
+                - Benzinmäher brauchen IMMER Öl SAE 30 (Art. 13174) und Oecofuel 4 (Art. 39659).
+                - Nenne immer die Artikelnummern (Art.Nr.) aus der Liste.
+                - Wenn du ein Produkt empfiehlst, erkläre kurz warum.
+                - Wenn du etwas nicht weißt, verweise an die Mitarbeiter in Herzogenbuchsee.`;
+
                 try {
                     const response = await fetch(API_URL, {
                         method: 'POST',
@@ -99,10 +113,10 @@
                         })
                     });
                     const data = await response.json();
-                    const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Information nicht gefunden.";
+                    const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Entschuldigung, ich konnte die Information nicht abrufen. Bitte fragen Sie unser Personal.";
                     setChatHistory(prev => [...prev, { role: 'ai', text: aiText }]);
                 } catch (e) {
-                    setChatHistory(prev => [...prev, { role: 'ai', text: "Verbindungsfehler." }]);
+                    setChatHistory(prev => [...prev, { role: 'ai', text: "Verbindungsfehler zur Landi-Datenbank. Bitte prüfen Sie Ihre Internetverbindung." }]);
                 } finally {
                     setIsTyping(false);
                 }
@@ -118,87 +132,127 @@
 
             useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chatHistory]);
 
-            const filtered = mowers.filter(m => m.fullName.toLowerCase().includes(searchTerm.toLowerCase()) || m.id.includes(searchTerm));
+            const filtered = mowers.filter(m => 
+                m.fullName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                m.id.includes(searchTerm)
+            );
 
             return (
-                <div className="min-h-screen">
+                <div className="min-h-screen pb-20">
                     {/* Header */}
-                    <nav className="bg-white border-b-4 border-green-700 shadow-lg p-6 sticky top-0 z-50">
-                        <div className="max-w-6xl mx-auto flex justify-between items-center">
+                    <nav className="glass-nav border-b-4 border-green-700 p-4 md:p-6 sticky top-0 z-50 shadow-md">
+                        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
                             <div className="flex items-center gap-3">
-                                <div className="bg-green-700 text-white p-2 rounded-lg"><Icon name="Shield" /></div>
-                                <h1 className="text-xl font-black">LANDI BUCHSI MASTER</h1>
+                                <div className="bg-green-700 text-white p-2.5 rounded-xl shadow-lg shadow-green-900/20"><Icon name="Shield" /></div>
+                                <div>
+                                    <h1 className="text-xl md:text-2xl font-black tracking-tighter">LANDI BUCHSI MASTER <span className="text-green-700">2026</span></h1>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Expert Edition • Herzogenbuchsee</p>
+                                </div>
                             </div>
-                            <div className="flex gap-4">
-                                <input 
-                                    type="text" 
-                                    placeholder="Suche..." 
-                                    className="bg-slate-100 rounded-xl px-4 py-2 outline-none focus:ring-2 ring-green-600"
-                                    value={searchTerm}
-                                    onChange={e => setSearchTerm(e.target.value)}
-                                />
-                                <button onClick={() => setShowChat(!showChat)} className="bg-green-700 text-white p-2 rounded-xl">
+                            <div className="flex gap-3 w-full md:w-auto">
+                                <div className="relative flex-1 md:w-80">
+                                    <Icon name="Search" className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+                                    <input 
+                                        type="text" 
+                                        placeholder="Art.Nr. oder Modell suchen..." 
+                                        className="w-full bg-slate-100 rounded-xl pl-10 pr-4 py-2.5 font-bold text-sm outline-none focus:ring-2 ring-green-600 transition-all"
+                                        value={searchTerm}
+                                        onChange={e => setSearchTerm(e.target.value)}
+                                    />
+                                </div>
+                                <button onClick={() => setShowChat(!showChat)} className="bg-green-700 text-white p-2.5 rounded-xl shadow-lg hover:bg-green-800 active:scale-90 transition-all">
                                     <Icon name="Chat" />
                                 </button>
                             </div>
                         </div>
                     </nav>
 
-                    <main className="max-w-6xl mx-auto p-6">
+                    <main className="max-w-7xl mx-auto p-6 md:p-10">
                         {/* Chat Bot UI */}
                         {showChat && (
-                            <div className="fixed bottom-6 right-6 w-full max-w-sm bg-white rounded-3xl shadow-2xl border-4 border-green-700 overflow-hidden z-[100] animate-slideUp">
-                                <div className="bg-green-700 p-4 text-white font-black flex justify-between">
-                                    <span>KI-BERATER</span>
-                                    <button onClick={() => setShowChat(false)}>X</button>
+                            <div className="fixed bottom-6 right-6 w-[calc(100%-3rem)] max-w-md bg-white rounded-[2.5rem] shadow-2xl border-4 border-green-700 overflow-hidden z-[100] animate-slideUp flex flex-col h-[600px]">
+                                <div className="bg-green-700 p-5 text-white font-black flex justify-between items-center">
+                                    <div className="flex items-center gap-2 uppercase tracking-widest text-xs">
+                                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                                        KI-Fachberater Aktiv
+                                    </div>
+                                    <button onClick={() => setShowChat(false)}><Icon name="X" className="w-5 h-5" /></button>
                                 </div>
-                                <div className="h-96 overflow-y-auto p-4 space-y-4 no-scrollbar bg-slate-50">
+                                <div className="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar bg-slate-50">
                                     {chatHistory.map((msg, i) => (
                                         <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                            <div className={`p-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-green-600 text-white' : 'bg-white border border-slate-200'}`}>
+                                            <div className={`p-4 rounded-2xl text-sm font-medium leading-relaxed max-w-[85%] ${msg.role === 'user' ? 'bg-green-600 text-white rounded-tr-none' : 'bg-white border border-slate-200 rounded-tl-none shadow-sm'}`}>
                                                 {msg.text}
                                             </div>
                                         </div>
                                     ))}
-                                    {isTyping && <div className="text-xs animate-pulse font-bold text-green-600">Experte schreibt...</div>}
+                                    {isTyping && <div className="text-[10px] font-black text-green-600 uppercase tracking-widest animate-pulse ml-2">Experte überlegt...</div>}
                                     <div ref={chatEndRef} />
                                 </div>
-                                <div className="p-4 border-t flex gap-2">
-                                    <input value={userInput} onChange={e => setUserInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleSend()} placeholder="Frag mich was..." className="flex-1 border rounded-full px-4 py-1" />
-                                    <button onClick={handleSend} className="bg-green-700 text-white p-2 rounded-full"><Icon name="Send" className="w-4 h-4" /></button>
+                                <div className="p-4 bg-white border-t flex gap-2">
+                                    <input value={userInput} onChange={e => setUserInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleSend()} placeholder="Frag nach Öl, Messer oder Fläche..." className="flex-1 bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3 outline-none focus:border-green-600 font-medium" />
+                                    <button onClick={handleSend} className="bg-green-700 text-white p-4 rounded-2xl shadow-lg"><Icon name="Send" className="w-5 h-5" /></button>
                                 </div>
                             </div>
                         )}
 
                         {/* Mower Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                             {filtered.map(m => (
-                                <div key={m.id} onClick={() => setSelectedModel(m)} className="bg-white p-6 rounded-3xl shadow-md border hover:border-green-600 cursor-pointer transition-all">
-                                    <span className="text-[10px] font-black text-slate-400">ART. {m.id}</span>
-                                    <h3 className="text-lg font-black mb-4">{m.name}</h3>
-                                    <p className="text-xs text-slate-500 mb-6">{m.description}</p>
-                                    <div className="text-xl font-black">CHF {m.price}</div>
+                                <div key={m.id} onClick={() => setSelectedModel(m)} className="bg-white p-8 rounded-[2rem] shadow-sm border-2 border-transparent hover:border-green-600 hover:shadow-2xl cursor-pointer transition-all group flex flex-col justify-between">
+                                    <div>
+                                        <div className="flex justify-between items-start mb-6">
+                                            <span className="text-[10px] font-black text-slate-400 bg-slate-50 px-2.5 py-1 rounded-full uppercase tracking-tighter">Art. {m.id}</span>
+                                            <div className="bg-green-50 text-green-700 p-2 rounded-xl group-hover:scale-110 transition-transform"><Icon name="Zap" className="w-5 h-5" /></div>
+                                        </div>
+                                        <h3 className="text-xl font-black text-slate-800 leading-tight group-hover:text-green-700 transition-colors mb-2">{m.name}</h3>
+                                        <p className="text-xs text-slate-500 font-medium line-clamp-2 leading-relaxed mb-6">{m.description}</p>
+                                    </div>
+                                    <div className="flex justify-between items-center pt-6 border-t border-slate-50">
+                                        <div className="text-2xl font-black text-slate-800">CHF {m.price}</div>
+                                        <div className="bg-slate-100 p-1.5 rounded-full group-hover:bg-green-700 group-hover:text-white transition-all"><Icon name="Check" className="w-5 h-5" /></div>
+                                    </div>
                                 </div>
                             ))}
                         </div>
 
                         {/* Detail Modal */}
                         {selectedModel && (
-                            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-[200]">
-                                <div className="bg-white rounded-[3rem] p-10 max-w-2xl w-full relative animate-slideUp">
-                                    <button onClick={() => setSelectedModel(null)} className="absolute top-6 right-6 text-slate-400"><Icon name="X" /></button>
-                                    <h2 className="text-4xl font-black mb-8">{selectedModel.fullName}</h2>
-                                    <div className="grid grid-cols-2 gap-4 mb-8">
-                                        {Object.entries(selectedModel.specs).map(([k,v]) => (
-                                            <div key={k} className="bg-slate-50 p-4 rounded-2xl">
-                                                <div className="text-[10px] font-black text-slate-400 uppercase">{k}</div>
-                                                <div className="font-bold">{v}</div>
-                                            </div>
-                                        ))}
+                            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[200]">
+                                <div className="bg-white rounded-[3rem] shadow-2xl overflow-hidden max-w-4xl w-full relative animate-slideUp border-4 border-white">
+                                    <div className="p-8 md:p-14 bg-gradient-to-br from-white to-slate-50 border-b">
+                                        <button onClick={() => setSelectedModel(null)} className="mb-10 text-[10px] font-black text-slate-400 hover:text-green-700 flex items-center gap-3 uppercase tracking-widest transition-all">← ZURÜCK</button>
+                                        <h2 className="text-4xl md:text-6xl font-black tracking-tighter mb-8">{selectedModel.fullName}</h2>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            {Object.entries(selectedModel.specs).map(([k,v]) => (
+                                                <div key={k} className="bg-white border-2 border-slate-100 p-4 rounded-2xl shadow-sm hover:border-green-100">
+                                                    <div className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">{k}</div>
+                                                    <div className="font-bold text-sm">{v}</div>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
-                                    <div className="bg-green-700 text-white p-6 rounded-3xl">
-                                        <h4 className="font-black mb-2">Original-Zubehör Art.Nr.</h4>
-                                        <div className="text-sm opacity-90">{JSON.stringify(selectedModel.consumables)}</div>
+                                    <div className="p-10 md:p-14 grid grid-cols-1 md:grid-cols-2 gap-10">
+                                        <div className="bg-slate-900 text-white p-10 rounded-[3rem] shadow-xl relative overflow-hidden">
+                                            <div className="absolute -right-10 -bottom-10 text-slate-800 opacity-20 transform rotate-12"><Icon name="Shield" className="w-64 h-64" /></div>
+                                            <h4 className="text-xl font-black text-green-500 mb-6 uppercase tracking-widest">Start-Anleitung</h4>
+                                            <p className="text-slate-300 text-lg leading-relaxed font-medium mb-8 relative z-10">{selectedModel.setup}</p>
+                                            <div className="text-[10px] font-black uppercase text-green-400">Verifiziertes Landi-Originalwissen</div>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-black text-xs uppercase tracking-[0.3em] text-slate-400 mb-8">Zubehör & Betriebsstoffe</h4>
+                                            <div className="space-y-4">
+                                                {Object.entries(selectedModel.consumables).map(([type, val]) => (
+                                                    <div key={type} className="flex justify-between items-center bg-slate-50 p-6 rounded-3xl border border-slate-100">
+                                                        <div>
+                                                            <div className="text-[9px] font-black text-green-700 uppercase tracking-widest mb-1">{type}</div>
+                                                            <div className="font-black text-slate-800">Art. {val}</div>
+                                                        </div>
+                                                        <Icon name="Check" className="text-green-600" />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
